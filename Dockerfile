@@ -18,13 +18,13 @@ LABEL org.opencontainers.image.description="TShock Terraria server for Fly.io"
 USER root
 
 # World / server defaults (override with `fly secrets set ...`)
-ENV WORLD_SIZE=2 \
-    WORLD_NAME=FlyWorld \
+ENV WORLD_SIZE=3 \
+    WORLD_NAME=ForTheWorthy \
     MAX_PLAYERS=8 \
-    DIFFICULTY=0 \
+    DIFFICULTY=2 \
     SERVER_PASS="" \
     SECURE=1 \
-    SEED=""
+    SEED="for the worthy"
 
 # Custom entrypoint: wire /data → /tshock /worlds /plugins, then exec server
 COPY entrypoint.sh /entrypoint.sh
