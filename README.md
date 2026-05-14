@@ -141,36 +141,45 @@ Override any default with `fly secrets`. Changes take effect after `fly machines
 
 Three ways to tweak `config.json` after deploy:
 
-### 🥇 Easiest: edit in-place via SSH (nano/vim pre-installed)
+### 🥇 Recommended: edit locally via sftp (gives you git history)
+
+```bash
+# 1. Pull the live config
+fly ssh sftp get /data/tshock/config.json ./config.json
+
+# 2. Edit in your favorite editor — commit to git for history
+code config.json
+git add config.json && git commit -m "config: tune spawn rate"
+
+# 3. Push back
+fly ssh sftp shell <<'EOF'
+put config.json /data/tshock/config.json
+EOF
+
+# 4. Apply — pick one:
+# In-game chat:  /reload         ← no downtime, players stay connected
+# OR:            fly machines restart -a terraria-flyio
+```
+
+Why this wins: your editor handles JSON validation, you have undo, and git history protects you from typos that brick the server.
+
+### 🥈 Quick & dirty: edit in-place via SSH (nano/vim pre-installed)
 
 ```bash
 fly ssh console
-nano /tshock/config.json          # or: vim /tshock/config.json
-# save & exit
+nano /tshock/config.json
+# Sanity-check before saving:
+cat /tshock/config.json | jq . > /dev/null && echo OK || echo "BROKEN JSON"
 exit
 
-# Apply changes — pick one:
-fly machines restart -a terraria-flyio    # full restart (kicks all players)
-# OR in-game (no downtime):
-# /reload                                  — re-reads config.json live
+# In-game:  /reload    — or restart the machine
 ```
 
-> ⚠️ Validate JSON before saving. A typo breaks the file → server fails to boot. Sanity check: `cat /tshock/config.json | jq .` should print prettified JSON.
+> ⚠️ A typo here breaks the file → server fails to boot. Always pipe through `jq` to validate.
 
-### 🥈 Safer: edit locally, sftp up (gives you git history)
+### 🥉 Live tweaks: TShock slash commands (no SSH needed)
 
-```bash
-fly ssh sftp get /data/tshock/config.json ./config.json
-# Edit in your favorite editor, commit to git
-fly ssh sftp shell
-> put config.json /data/tshock/config.json
-> exit
-fly machines restart -a terraria-flyio
-```
-
-### 🥉 Live: TShock slash commands (no SSH needed)
-
-Most settings have in-game equivalents — apply instantly without restart:
+Most settings have in-game equivalents — apply instantly without touching files:
 
 ```
 /maxspawns 5
