@@ -1,6 +1,23 @@
 # 🎮 Terraria TShock on Fly.io
 
-Run a [TShock](https://github.com/Pryaxis/TShock) Terraria server on [Fly.io](https://fly.io) with a single persistent 5 GB volume that holds **config, plugins, worlds, and player data**.
+Run a [TShock](https://github.com/Pryaxis/TShock) Terraria server on [Fly.io](https://fly.io) — preconfigured for a **Large × Master × "For the Worthy"** world on a 4 GB / 2 vCPU machine with a persistent 5 GB volume.
+
+## Defaults baked into this repo
+
+| | Setting |
+|---|---|
+| 🌍 World size | **Large** |
+| 💀 Difficulty | **Master** |
+| 🌱 Seed | `for the worthy` (FTW secret seed) |
+| 📛 World name | `ForTheWorthy` |
+| 👥 Max players | `8` |
+| 🛡️ Anti-cheat | on |
+| 🖥️ VM | `performance-2x` (2 dedicated vCPU, 4 GB RAM) |
+| 💾 Volume | 5 GB at `/data`, auto-extend to 20 GB, daily snapshots (5-day retention) |
+| 🌏 Region | `sin` (Singapore) |
+| 🔌 Port | `7777/tcp` |
+
+Change any of these via `fly secrets set ...` (see [Configuration](#configuration)).
 
 ## What persists
 
@@ -15,64 +32,114 @@ Everything TShock writes is redirected to `/data`:
 | `/data/plugins`       | `/plugins`                      | Custom plugin `.dll` files |
 | `/data/terraria-home` | `$HOME` (`~/.local/share/...`)  | Catch-all for any XDG-style writes Terraria attempts |
 
-## Quick Start
+## First-Run Deploy
+
+### 1. Install Fly CLI and sign in
 
 ```bash
-# 1. Install Fly CLI & sign in
 curl -L https://fly.io/install.sh | sh
 fly auth login
+```
 
-# 2. Clone & launch (creates the app but doesn't deploy yet)
+### 2. Clone and create the app (no deploy yet)
+
+```bash
 git clone https://github.com/nyatoru/terraria-flyio
 cd terraria-flyio
-fly launch --copy-config --no-deploy --name terraria-flyio
+fly launch --copy-config --no-deploy --name terraria-flyio --region sin
+```
 
-# 3. Create the 5 GB volume FIRST (decoupled from deploy = safer)
-fly volume create terraria_data --region sin --size 5 --snapshot-retention 5
+`--copy-config` tells Fly to use the bundled `fly.toml` as-is. `--no-deploy` stops it from building before the volume exists.
 
-# 4. Allocate a public IPv4 (required — Terraria client can't use IPv6)
+### 3. Create the 5 GB persistent volume
+
+```bash
+fly volume create terraria_data \
+  --region sin \
+  --size 5 \
+  --snapshot-retention 5 \
+  --yes
+```
+
+The volume name **must be `terraria_data`** — that's what `fly.toml` mounts.
+
+### 4. Allocate a public IPv4
+
+```bash
 fly ips allocate-v4
+```
 
-# 5. Deploy — machine will mount the existing volume
+Terraria's client can't connect over IPv6, so a v4 address is required.
+
+### 5. (Optional) Override world defaults
+
+If you want anything other than Large/Master/FTW, set it **before** the first deploy — the world is auto-created on first boot and overrides do nothing afterward:
+
+```bash
+fly secrets set WORLD_NAME=MyWorld WORLD_SIZE=2 DIFFICULTY=1 SEED="" SERVER_PASS=meow
+```
+
+### 6. Deploy
+
+```bash
 fly deploy
 ```
 
-## Connect
+First boot takes **2–4 minutes** while the Large × Master world generates. Watch progress:
 
-Terraria client → **Multiplayer → Join via IP**
-- **Address:** `<your-app>.fly.dev` (or the v4 IP from `fly ips list`)
+```bash
+fly logs
+```
+
+You'll see messages like `Generating world: 47%` and finally `Server started`.
+
+### 7. Connect from Terraria
+
+In-game → **Multiplayer → Join via IP**:
+
+- **Address:** the IP from `fly ips list` (or `terraria-flyio.fly.dev`)
 - **Port:** `7777`
+- **Password:** whatever you set in `SERVER_PASS` (none by default)
 
-## First-Time TShock Setup
+### 8. Claim the server (TShock setup)
 
-1. Join the server in-game
-2. Get the setup code: `fly logs | grep setup-code`
-3. In chat: `/setup <code>`
-4. Create your admin: `/user add YourName password superadmin`
-5. Lock it down: `/setup` (run again with no args to disable setup mode)
+The first connecting player must claim admin rights:
+
+```bash
+# Grab the one-time setup code from logs
+fly logs | grep -i 'setup code'
+```
+
+Then in the in-game chat:
+
+```
+/setup <code>
+/user add YourName YourPassword superadmin
+/login YourName YourPassword
+/setup            # run again to disable setup mode — IMPORTANT
+```
+
+🔒 Don't skip the last `/setup` or anyone joining can grab admin.
 
 ## Configuration
 
-Set via `fly secrets` (overrides defaults in `Dockerfile`):
+Override any default with `fly secrets`. Changes take effect after `fly machines restart`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `WORLD_SIZE` | `2` | `1`=small, `2`=medium, `3`=large |
-| `WORLD_NAME` | `FlyWorld` | World name (also used as filename) |
+| `WORLD_SIZE`  | `3` | `1`=small, `2`=medium, `3`=large |
+| `WORLD_NAME`  | `ForTheWorthy` | Used as filename + in-game name |
+| `DIFFICULTY`  | `2` | `0`=normal, `1`=expert, `2`=master, `3`=journey |
+| `SEED`        | `for the worthy` | Only applied when auto-creating a new world |
 | `MAX_PLAYERS` | `8` | Max concurrent players |
-| `DIFFICULTY` | `0` | `0`=normal, `1`=expert, `2`=master, `3`=journey |
 | `SERVER_PASS` | _(none)_ | Server join password |
-| `SECURE` | `1` | TShock anti-cheat (`1`=on) |
-| `SEED` | _(none)_ | World seed (only used on auto-create) |
+| `SECURE`      | `1` | TShock anti-cheat (`1`=on) |
 
-```bash
-fly secrets set WORLD_NAME=NyaWorld WORLD_SIZE=3 MAX_PLAYERS=16 SERVER_PASS=meow
-```
+> ⚠️ `WORLD_SIZE`, `WORLD_NAME`, `DIFFICULTY`, and `SEED` only apply on the **first deploy** when no `.wld` exists yet. To regenerate, delete the existing world from the volume first (`fly ssh console -C "rm /data/worlds/*.wld"`).
 
 ## Adding Plugins
 
 ```bash
-# Copy a .dll into the persistent /plugins dir on the running machine
 fly ssh sftp shell
 > put MyPlugin.dll /plugins/MyPlugin.dll
 > exit
@@ -107,6 +174,16 @@ fly ssh sftp get /data ./backups/$(date +%F)
 fly volume snapshots list <vol_id>
 fly volume create terraria_data --snapshot-id <snap_id> --region sin
 ```
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `Can't reach server` from Terraria client | Run `fly ips list` — make sure there's a v4 entry. If not, `fly ips allocate-v4`. |
+| First deploy fails with `volume not found` | Volume name in `fly volume create` must be `terraria_data` (matches `[[mounts]].source` in `fly.toml`). |
+| Logs show `world too big` or OOM | Bump VM size: edit `fly.toml` `[[vm]] size = "performance-4x"` then `fly deploy`. |
+| Want to wipe and regenerate world | `fly ssh console -C "rm /data/worlds/*.wld /data/worlds/*.twld"` then `fly machines restart`. |
+| Stuck "generating world" past 10 min | Check logs — Large × Master with FTW seed is heavy. If genuinely stuck, restart with `fly machines restart`. |
 
 ## License
 
