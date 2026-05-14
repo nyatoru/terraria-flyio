@@ -137,6 +137,70 @@ Override any default with `fly secrets`. Changes take effect after `fly machines
 
 > ⚠️ `WORLD_SIZE`, `WORLD_NAME`, `DIFFICULTY`, and `SEED` only apply on the **first deploy** when no `.wld` exists yet. To regenerate, delete the existing world from the volume first (`fly ssh console -C "rm /data/worlds/*.wld"`).
 
+## Editing config.json
+
+Three ways to tweak `config.json` after deploy:
+
+### 🥇 Easiest: edit in-place via SSH (nano/vim pre-installed)
+
+```bash
+fly ssh console
+nano /tshock/config.json          # or: vim /tshock/config.json
+# save & exit
+exit
+
+# Apply changes — pick one:
+fly machines restart -a terraria-flyio    # full restart (kicks all players)
+# OR in-game (no downtime):
+# /reload                                  — re-reads config.json live
+```
+
+> ⚠️ Validate JSON before saving. A typo breaks the file → server fails to boot. Sanity check: `cat /tshock/config.json | jq .` should print prettified JSON.
+
+### 🥈 Safer: edit locally, sftp up (gives you git history)
+
+```bash
+fly ssh sftp get /data/tshock/config.json ./config.json
+# Edit in your favorite editor, commit to git
+fly ssh sftp shell
+> put config.json /data/tshock/config.json
+> exit
+fly machines restart -a terraria-flyio
+```
+
+### 🥉 Live: TShock slash commands (no SSH needed)
+
+Most settings have in-game equivalents — apply instantly without restart:
+
+```
+/maxspawns 5
+/spawnrate 10
+/save             # save world
+/reload           # reload config.json from disk
+```
+
+### Commonly tweaked keys in `config.json`
+
+```jsonc
+{
+  "Settings": {
+    "ServerName": "Toru's Terraria",
+    "ServerPort": 7777,
+    "MaxSlots": 8,
+    "MotdMessages": ["Welcome to the server!"],
+    "DisableHardmode": false,
+    "DisableDungeonGuardian": false,
+    "RestApiEnabled": true,
+    "RestApiPort": 7878,
+    "AnnounceSave": true,
+    "BackupInterval": 10,
+    "BackupKeepFor": 60
+  }
+}
+```
+
+Full list: [TShock config docs](https://tshock.readme.io/docs/config-settings).
+
 ## Adding Plugins
 
 ```bash

@@ -17,6 +17,11 @@ LABEL org.opencontainers.image.description="TShock Terraria server for Fly.io"
 
 USER root
 
+# Editing tools for live config tweaks via `fly ssh console`
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends nano vim jq \
+ && rm -rf /var/lib/apt/lists/*
+
 # World / server defaults (override with `fly secrets set ...`)
 ENV WORLD_SIZE=3 \
     WORLD_NAME=ForTheWorthy \
