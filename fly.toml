@@ -1,49 +1,45 @@
 # fly.toml — TShock Terraria Server
-# https://fly.io/docs/reference/configuration/
+# Docs: https://fly.io/docs/reference/configuration/
 
 app = "terraria-flyio"
 primary_region = "sin"
 
-# ─── Build ───────────────────────────────────────
 [build]
 
-# ─── Services ────────────────────────────────────
-# Terraria uses raw TCP on port 7777
+# ─── Single persistent volume holds config, worlds, plugins, player data
+[[mounts]]
+  source      = "terraria_data"
+  destination = "/data"
+  initial_size = "5gb"
+
+# ─── Game port: raw TCP, no TLS proxy (Terraria's protocol is binary)
 [[services]]
   internal_port = 7777
-  protocol = "tcp"
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 100
-    soft_limit = 80
-
-  [[services.ports]]
-    handlers = ["tls"]
-    port = 7777  # Explicit game port for direct connect
-
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80    # Optional web port
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-# ─── Health Check ────────────────────────────────
-# Skip health check — Terraria doesn't expose HTTP
-# Fly treats TCP connections as "healthy" by default
-
-# ─── Statics (none) ─────────────────────────────
-
-# ─── Experimental ────────────────────────────────
-[experimental]
-  # Kill the machine after 30 min of no connections to save costs
-  auto_stop_machines = "stop"
+  protocol      = "tcp"
+  auto_stop_machines  = "stop"
   auto_start_machines = true
   min_machines_running = 0
 
-# ─── Deploy ──────────────────────────────────────
+  [services.concurrency]
+    type        = "connections"
+    hard_limit  = 32
+    soft_limit  = 16
+
+  [[services.ports]]
+    port     = 7777
+    handlers = []
+
+  [[services.tcp_checks]]
+    interval      = "15s"
+    timeout       = "5s"
+    grace_period  = "120s"   # World generation can take a minute+
+
+# ─── Machine size: TShock + medium world ≈ 1GB RAM is comfy
+[[vm]]
+  size        = "shared-cpu-2x"
+  memory      = "1gb"
+  cpu_kind    = "shared"
+  cpus        = 2
+
 [deploy]
-  # Wait for world generation on first deploy
-  strategy = "rolling"
+  strategy = "immediate"   # No rolling — only one server can hold the world

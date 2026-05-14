@@ -1,99 +1,101 @@
 # 🎮 Terraria TShock on Fly.io
 
-Run a [TShock](https://github.com/Pryaxis/TShock) Terraria server on [Fly.io](https://fly.io) with persistent world storage.
+Run a [TShock](https://github.com/Pryaxis/TShock) Terraria server on [Fly.io](https://fly.io) with a single persistent 5 GB volume that holds **config, plugins, worlds, and player data**.
 
-## Features
+## What persists
 
-- TShock 6.1 (Terraria 1.4.5.6) with anti-cheat, permissions, plugins
-- Persistent 5GB volume for world data
-- Auto-create world on first deploy
-- Public IP on port 7777
-- Auto-stop when no players connected (saves cost)
+A Fly volume mounted at `/data` is symlinked into the three paths TShock expects:
+
+| Mount path on volume | Symlinked to | Contents |
+|---|---|---|
+| `/data/tshock`  | `/tshock`  | `config.json`, `sscconfig.json`, `tshock.sqlite` (users/groups/permissions), `.tplr` SSC player data, logs, crashes |
+| `/data/worlds`  | `/worlds`  | `*.wld`, `*.twld`, `*.bak` world files |
+| `/data/plugins` | `/plugins` | Custom plugin `.dll` files |
+
+Everything survives redeploys, restarts, and machine recreation.
 
 ## Quick Start
 
-### 1. Install Fly CLI
 ```bash
+# 1. Install Fly CLI & sign in
 curl -L https://fly.io/install.sh | sh
 fly auth login
-```
 
-### 2. Launch
-```bash
-fly launch --copy-config --no-deploy
-fly volume create terraria_world --region sin --size 5
+# 2. Clone & launch (uses fly.toml as-is, no wizard)
+git clone https://github.com/nyatoru/terraria-flyio
+cd terraria-flyio
+fly launch --copy-config --no-deploy --name terraria-flyio
+
+# 3. Allocate a public IPv4 (required — Terraria client can't use IPv6)
+fly ips allocate-v4
+
+# 4. Deploy (volume auto-created at 5 GB on first machine boot)
 fly deploy
 ```
 
-### 3. Connect
-Open Terraria → Multiplayer → Join via IP:
-- **Address:** `terraria-flyio.fly.dev`
+## Connect
+
+Terraria client → **Multiplayer → Join via IP**
+- **Address:** `<your-app>.fly.dev` (or the v4 IP from `fly ips list`)
 - **Port:** `7777`
 
-## First-Time Setup
+## First-Time TShock Setup
 
 1. Join the server in-game
-2. Check logs for setup code: `fly logs | grep setup-code`
-3. Run `/setup <code>` in chat
-4. Register as admin: `/user add YourName password superadmin`
+2. Get the setup code: `fly logs | grep setup-code`
+3. In chat: `/setup <code>`
+4. Create your admin: `/user add YourName password superadmin`
+5. Lock it down: `/setup` (run again with no args to disable setup mode)
 
 ## Configuration
 
-Environment variables in `fly.toml` or `fly secrets`:
+Set via `fly secrets` (overrides defaults in `Dockerfile`):
 
 | Variable | Default | Description |
-|----------|---------|-------------|
-| `WORLD_SIZE` | `2` | 1=small, 2=medium, 3=large |
-| `WORLD_NAME` | `FlyWorld` | World name |
+|---|---|---|
+| `WORLD_SIZE` | `2` | `1`=small, `2`=medium, `3`=large |
+| `WORLD_NAME` | `FlyWorld` | World name (also used as filename) |
 | `MAX_PLAYERS` | `8` | Max concurrent players |
-| `DIFFICULTY` | `0` | 0=normal, 1=expert, 2=master, 3=journey |
-| `SERVER_PASS` | _(none)_ | Server password |
-| `SECURE` | `1` | Anti-cheat (1=on, 0=off) |
+| `DIFFICULTY` | `0` | `0`=normal, `1`=expert, `2`=master, `3`=journey |
+| `SERVER_PASS` | _(none)_ | Server join password |
+| `SECURE` | `1` | TShock anti-cheat (`1`=on) |
+| `SEED` | _(none)_ | World seed (only used on auto-create) |
 
-Example:
 ```bash
-fly secrets set WORLD_SIZE=3 WORLD_NAME="MyWorld" MAX_PLAYERS=16
+fly secrets set WORLD_NAME=NyaWorld WORLD_SIZE=3 MAX_PLAYERS=16 SERVER_PASS=meow
+```
+
+## Adding Plugins
+
+```bash
+# Copy a .dll into the persistent /plugins dir on the running machine
+fly ssh sftp shell
+> put MyPlugin.dll /plugins/MyPlugin.dll
+> exit
+fly machines restart -a terraria-flyio
 ```
 
 ## Useful Commands
 
 ```bash
-# View logs
-fly logs
-
-# Attach to server console
-fly ssh console -C "cat /proc/1/fd/1"
-
-# Restart server
-fly machines restart -a terraria-flyio
-
-# Scale to zero (stop)
-fly machines stop -a terraria-flyio
-
-# Delete and recreate volume
-fly volume destroy <vol_id> -a terraria-flyio
+fly logs                         # live logs
+fly status                       # machine + volume status
+fly volume list                  # see the 5 GB volume
+fly machines stop                # save cost (auto-stops when idle anyway)
+fly machines start
+fly ssh console                  # shell inside the running container
 ```
-
-## Managing via TShock REST API
-
-The REST API runs on port 7878 (internal only). To access:
-```bash
-fly ssh console -C "curl -s http://localhost:7878/v2/server/status?token=YOUR_TOKEN"
-```
-
-Create a token first by joining the server and running `/rest createtoken`.
 
 ## Backup
 
-World files are on the Fly volume at `/world/`. To backup:
 ```bash
-# Save world in-game first
-fly ssh console -C "echo 'save' > /proc/1/fd/0"
+# Save world in-game first (or wait for TShock's auto-save)
+fly ssh console -C "ls -la /data/worlds"
 
-# Copy world files locally
-fly ssh sftp get /world/*.wld ./backups/
+# Pull the whole /data tree down
+fly ssh sftp get /data ./backups/$(date +%F)
 ```
 
 ## License
 
-MIT — TShock itself is under a custom license, see [Pryaxis/TShock](https://github.com/Pryaxis/TShock/blob/main/COPYING).
+MIT — TShock is licensed separately, see [Pryaxis/TShock COPYING](https://github.com/Pryaxis/TShock/blob/master/COPYING).
