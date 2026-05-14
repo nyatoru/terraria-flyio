@@ -1,5 +1,10 @@
 # fly.toml — TShock Terraria Server
 # Docs: https://fly.io/docs/reference/configuration/
+#
+# Access policy:
+#   - Game traffic ONLY (raw TCP/7777)
+#   - No HTTP/HTTPS — *.fly.dev cannot reach this server
+#   - Connect via the dedicated IPv4 from `fly ips list`
 
 app = "terraria-flyio"
 primary_region = "sin"

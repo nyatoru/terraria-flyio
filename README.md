@@ -97,9 +97,16 @@ You'll see messages like `Generating world: 47%` and finally `Server started`.
 
 In-game → **Multiplayer → Join via IP**:
 
-- **Address:** the IP from `fly ips list` (or `terraria-flyio.fly.dev`)
+- **Address:** the dedicated IPv4 from `fly ips list` (**do not** use `terraria-flyio.fly.dev` — it won't resolve, this app exposes raw TCP only, no HTTP)
 - **Port:** `7777`
 - **Password:** whatever you set in `SERVER_PASS` (none by default)
+
+> 🔒 **Want to lock down access further?** Release the shared IPv4 so only your dedicated one works:
+> ```bash
+> fly ips list                           # find the "shared" v4 entry
+> fly ips release <shared-ipv4>          # remove it
+> ```
+> After this, only people with your specific IPv4 can connect.
 
 ### 8. Claim the server (TShock setup)
 
