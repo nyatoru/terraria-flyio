@@ -4,15 +4,16 @@ Run a [TShock](https://github.com/Pryaxis/TShock) Terraria server on [Fly.io](ht
 
 ## What persists
 
-A Fly volume mounted at `/data` is symlinked into the three paths TShock expects:
+> ⚠️ Fly machines have **ephemeral filesystems** — only the volume at `/data` survives restarts, redeploys, and machine recreation.
 
-| Mount path on volume | Symlinked to | Contents |
+Everything TShock writes is redirected to `/data`:
+
+| Persistent path on volume | Symlinked/redirected to | Contents |
 |---|---|---|
-| `/data/tshock`  | `/tshock`  | `config.json`, `sscconfig.json`, `tshock.sqlite` (users/groups/permissions), `.tplr` SSC player data, logs, crashes |
-| `/data/worlds`  | `/worlds`  | `*.wld`, `*.twld`, `*.bak` world files |
-| `/data/plugins` | `/plugins` | Custom plugin `.dll` files |
-
-Everything survives redeploys, restarts, and machine recreation.
+| `/data/tshock`        | `/tshock`                       | `config.json`, `sscconfig.json`, `tshock.sqlite` (users/groups/permissions), `.tplr` SSC player data, logs, crashes |
+| `/data/worlds`        | `/worlds`                       | `*.wld`, `*.twld`, `*.bak` world files + auto-save backups (`-savedirectory`) |
+| `/data/plugins`       | `/plugins`                      | Custom plugin `.dll` files |
+| `/data/terraria-home` | `$HOME` (`~/.local/share/...`)  | Catch-all for any XDG-style writes Terraria attempts |
 
 ## Quick Start
 
