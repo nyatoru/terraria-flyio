@@ -41,12 +41,10 @@ primary_region = "sin"
     timeout       = "5s"
     grace_period  = "120s"   # World generation can take a minute+
 
-# ─── Machine size: TShock + medium world ≈ 1GB RAM is comfy
+# ─── Machine size: performance-2x = 2 dedicated vCPU + 4GB RAM
+# Ideal for medium/large worlds with 8-16 players + plugins
 [[vm]]
-  size        = "shared-cpu-2x"
-  memory      = "1gb"
-  cpu_kind    = "shared"
-  cpus        = 2
+  size = "performance-2x"
 
 [deploy]
   strategy = "immediate"   # No rolling — only one server can hold the world
