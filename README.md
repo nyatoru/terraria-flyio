@@ -21,15 +21,18 @@ Everything survives redeploys, restarts, and machine recreation.
 curl -L https://fly.io/install.sh | sh
 fly auth login
 
-# 2. Clone & launch (uses fly.toml as-is, no wizard)
+# 2. Clone & launch (creates the app but doesn't deploy yet)
 git clone https://github.com/nyatoru/terraria-flyio
 cd terraria-flyio
 fly launch --copy-config --no-deploy --name terraria-flyio
 
-# 3. Allocate a public IPv4 (required — Terraria client can't use IPv6)
+# 3. Create the 5 GB volume FIRST (decoupled from deploy = safer)
+fly volume create terraria_data --region sin --size 5 --snapshot-retention 5
+
+# 4. Allocate a public IPv4 (required — Terraria client can't use IPv6)
 fly ips allocate-v4
 
-# 4. Deploy (volume auto-created at 5 GB on first machine boot)
+# 5. Deploy — machine will mount the existing volume
 fly deploy
 ```
 
@@ -88,12 +91,20 @@ fly ssh console                  # shell inside the running container
 
 ## Backup
 
-```bash
-# Save world in-game first (or wait for TShock's auto-save)
-fly ssh console -C "ls -la /data/worlds"
+Fly takes daily snapshots automatically (kept 5 days). Manual options:
 
-# Pull the whole /data tree down
+```bash
+# List & create snapshots
+fly volume list
+fly volume snapshots list <vol_id>
+fly volume snapshots create <vol_id>
+
+# Save world in-game first, then pull everything down
 fly ssh sftp get /data ./backups/$(date +%F)
+
+# Restore from snapshot (creates new volume; reattach via fly.toml)
+fly volume snapshots list <vol_id>
+fly volume create terraria_data --snapshot-id <snap_id> --region sin
 ```
 
 ## License

@@ -7,10 +7,17 @@ primary_region = "sin"
 [build]
 
 # ─── Single persistent volume holds config, worlds, plugins, player data
+# Create the volume BEFORE first deploy:
+#   fly volume create terraria_data --region sin --size 5 --snapshot-retention 5
+# Daily snapshots are kept 5 days (Fly free tier) — restorable if volume corrupts.
 [[mounts]]
-  source      = "terraria_data"
-  destination = "/data"
-  initial_size = "5gb"
+  source                  = "terraria_data"
+  destination             = "/data"
+  initial_size            = "5gb"
+  snapshot_retention      = 5     # days
+  auto_extend_size_threshold = 80  # % full → auto-grow
+  auto_extend_size_increment = "1GB"
+  auto_extend_size_limit     = "20GB"
 
 # ─── Game port: raw TCP, no TLS proxy (Terraria's protocol is binary)
 [[services]]
