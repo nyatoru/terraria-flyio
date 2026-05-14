@@ -1,0 +1,49 @@
+# fly.toml — TShock Terraria Server
+# https://fly.io/docs/reference/configuration/
+
+app = "terraria-flyio"
+primary_region = "sin"
+
+# ─── Build ───────────────────────────────────────
+[build]
+
+# ─── Services ────────────────────────────────────
+# Terraria uses raw TCP on port 7777
+[[services]]
+  internal_port = 7777
+  protocol = "tcp"
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+  [[services.ports]]
+    handlers = ["tls"]
+    port = 7777  # Explicit game port for direct connect
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80    # Optional web port
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+# ─── Health Check ────────────────────────────────
+# Skip health check — Terraria doesn't expose HTTP
+# Fly treats TCP connections as "healthy" by default
+
+# ─── Statics (none) ─────────────────────────────
+
+# ─── Experimental ────────────────────────────────
+[experimental]
+  # Kill the machine after 30 min of no connections to save costs
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+# ─── Deploy ──────────────────────────────────────
+[deploy]
+  # Wait for world generation on first deploy
+  strategy = "rolling"
