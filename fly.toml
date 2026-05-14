@@ -20,12 +20,15 @@ primary_region = "sin"
   auto_extend_size_limit     = "20GB"
 
 # ─── Game port: raw TCP, no TLS proxy (Terraria's protocol is binary)
+# NOTE: auto_stop is DISABLED for Terraria — stop/start cycles cause
+# [PP02] broken pipe errors because the client times out while Fly is
+# booting the machine back up. Keep min_machines_running = 1.
 [[services]]
   internal_port = 7777
   protocol      = "tcp"
-  auto_stop_machines  = "stop"
-  auto_start_machines = true
-  min_machines_running = 0
+  auto_stop_machines  = "off"
+  auto_start_machines = false
+  min_machines_running = 1
 
   [services.concurrency]
     type        = "connections"
@@ -37,9 +40,9 @@ primary_region = "sin"
     handlers = []
 
   [[services.tcp_checks]]
-    interval      = "15s"
-    timeout       = "5s"
-    grace_period  = "120s"   # World generation can take a minute+
+    interval      = "30s"
+    timeout       = "10s"
+    grace_period  = "180s"   # Large+Master world generation takes 2-4 min
 
 # ─── Machine size: performance-2x = 2 dedicated vCPU + 4GB RAM
 # Ideal for medium/large worlds with 8-16 players + plugins
