@@ -1,7 +1,9 @@
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import Console from './pages/Console.jsx'
 import Settings from './pages/Settings.jsx'
+import Login from './pages/Login.jsx'
 
 const NAV_ITEMS = [
   { to: '/',         label: 'Dashboard', icon: '⬡' },
@@ -9,7 +11,7 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings',  icon: '⚙' },
 ]
 
-function NavBar() {
+function NavBar({ onLogout }) {
   const location = useLocation()
 
   return (
@@ -62,19 +64,44 @@ function NavBar() {
         })}
       </div>
 
-      {/* Status indicator */}
-      <div className="flex items-center gap-2 px-6 border-l border-cyber-border">
-        <div className="online-dot" />
-        <span className="text-xs tracking-widest uppercase"
-              style={{ color: '#00ffff88', fontFamily: 'JetBrains Mono, monospace' }}>
-          LIVE
-        </span>
+      {/* Right side: status indicator + logout */}
+      <div className="flex items-center gap-4 px-6 border-l border-cyber-border">
+        <div className="flex items-center gap-2">
+          <div className="online-dot" />
+          <span className="text-xs tracking-widest uppercase"
+                style={{ color: '#00ffff88', fontFamily: 'JetBrains Mono, monospace' }}>
+            LIVE
+          </span>
+        </div>
+
+        <button
+          onClick={onLogout}
+          className="cyber-btn-pink text-[10px] px-3 py-1.5 tracking-widest uppercase"
+          title="Logout"
+        >
+          ⏻ Logout
+        </button>
       </div>
     </nav>
   )
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => !!localStorage.getItem('tshock_token'))
+
+  function handleLogin() {
+    setAuthed(true)
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('tshock_token')
+    setAuthed(false)
+  }
+
+  if (!authed) {
+    return <Login onLogin={handleLogin} />
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ background: '#0a0a0f' }}>
       {/* Scanline overlay */}
@@ -84,7 +111,7 @@ export default function App() {
              backgroundSize: '100% 4px',
            }} />
 
-      <NavBar />
+      <NavBar onLogout={handleLogout} />
 
       <main className="flex-1 overflow-auto relative">
         {/* Corner glow effects */}

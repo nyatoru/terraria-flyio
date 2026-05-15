@@ -1,10 +1,13 @@
 /**
  * TShock REST API helper
- * All calls attach the auth token from .env
+ * Auth token is read live from localStorage on every call.
  */
 
 const BASE = '/tshock'
-const TOKEN = import.meta.env.VITE_TSHOCK_TOKEN || ''
+
+function getToken() {
+  return localStorage.getItem('tshock_token') || ''
+}
 
 function url(path, params = {}) {
   const u = new URL(window.location.origin + BASE + path)
@@ -20,17 +23,17 @@ async function get(path, params = {}) {
 
 // ── Server ────────────────────────────────────────────────────────────────────
 export async function getServerStatus() {
-  return get('/v2/server/status', { token: TOKEN })
+  return get('/v2/server/status', { token: getToken() })
 }
 
 // ── Players ───────────────────────────────────────────────────────────────────
 export async function getPlayerList() {
-  return get('/v2/players/list', { token: TOKEN })
+  return get('/v2/players/list', { token: getToken() })
 }
 
 // ── Commands ──────────────────────────────────────────────────────────────────
 export async function sendCommand(cmd) {
-  return get('/v3/server/rawcmd', { cmd, token: TOKEN })
+  return get('/v3/server/rawcmd', { cmd, token: getToken() })
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -40,9 +43,9 @@ export async function createToken(username, password) {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 export async function getConfig() {
-  return get('/v2/server/config', { token: TOKEN })
+  return get('/v2/server/config', { token: getToken() })
 }
 
 export async function updateConfig(key, value) {
-  return get('/v2/server/updateconfig', { token: TOKEN, key, value })
+  return get('/v2/server/updateconfig', { token: getToken(), key, value })
 }
