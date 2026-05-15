@@ -61,7 +61,7 @@ primary_region = "sin"
   size = "performance-2x"
 
 [env]
-  WORLD_NAME = "legendary-3"
+  WORLD_NAME = "legendary-4"
   SEED = "for the worthy"
   DIFFICULTY = "2"
 
