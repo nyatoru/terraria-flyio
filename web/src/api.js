@@ -3,11 +3,11 @@
  * All calls attach the auth token from .env
  */
 
-const BASE = import.meta.env.VITE_TSHOCK_API || 'http://localhost:7878'
+const BASE = '/tshock'
 const TOKEN = import.meta.env.VITE_TSHOCK_TOKEN || ''
 
 function url(path, params = {}) {
-  const u = new URL(BASE + path)
+  const u = new URL(window.location.origin + BASE + path)
   Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v))
   return u.toString()
 }
