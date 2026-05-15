@@ -47,15 +47,15 @@ chown -R 1654:1654 "$DATA_ROOT" 2>/dev/null || true
 
 # ─── First-run detection ────────────────────────────────────────────────
 WORLD_ARGS=""
-if ! ls "$DATA_ROOT/worlds"/*.wld >/dev/null 2>&1; then
-  echo "[entrypoint] No world found — auto-creating '${WORLD_NAME}' (size=${WORLD_SIZE}, diff=${DIFFICULTY})"
+NAMED_WLD="$DATA_ROOT/worlds/${WORLD_NAME}.wld"
+if [ -f "$NAMED_WLD" ]; then
+  echo "[entrypoint] Loading existing world: $NAMED_WLD"
+  WORLD_ARGS="-world $NAMED_WLD"
+else
+  echo "[entrypoint] No world named '${WORLD_NAME}' found — auto-creating (size=${WORLD_SIZE}, diff=${DIFFICULTY})"
   WORLD_ARGS="-autocreate ${WORLD_SIZE} -worldname ${WORLD_NAME} -world /worlds/${WORLD_NAME}.wld"
   [ -n "$SEED" ] && WORLD_ARGS="$WORLD_ARGS -seed ${SEED}"
   [ -n "$DIFFICULTY" ] && WORLD_ARGS="$WORLD_ARGS -difficulty ${DIFFICULTY}"
-else
-  FIRST_WLD=$(ls "$DATA_ROOT/worlds"/*.wld | head -1)
-  echo "[entrypoint] Loading existing world: $FIRST_WLD"
-  WORLD_ARGS="-world $FIRST_WLD"
 fi
 
 PASS_ARG=""
