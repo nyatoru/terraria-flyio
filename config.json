@@ -147,7 +147,7 @@
     "PostgresPassword": "",
     "UseSqlLogs": false,
     "RevertToTextLogsOnSqlFailures": 10,
-    "RestApiEnabled": false,
+    "RestApiEnabled": true,
     "RestApiPort": 7878,
     "LogRest": false,
     "EnableTokenEndpointAuthentication": false,
