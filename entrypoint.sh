@@ -45,6 +45,21 @@ export HOME="$DATA_ROOT/terraria-home"
 # Fix ownership so the non-root APP_UID (1654) baked into the image can write
 chown -R 1654:1654 "$DATA_ROOT" 2>/dev/null || true
 
+# ─── Generate serverconfig.txt ──────────────────────────────────────────
+# Write world settings via config file instead of CLI flags.
+# TShock reads serverconfig.txt for seed/difficulty — CLI -seed flag
+# does NOT support special text seeds like "for the worthy" (TShock bug #2328).
+SERVERCONFIG="$DATA_ROOT/tshock/serverconfig.txt"
+{
+  echo "maxplayers=${MAX_PLAYERS}"
+  echo "secure=${SECURE}"
+  [ -n "$SERVER_PASS" ] && echo "password=${SERVER_PASS}"
+  [ -n "$SEED" ]        && echo "seed=${SEED}"
+  [ -n "$DIFFICULTY" ]  && echo "difficulty=${DIFFICULTY}"
+  [ -n "$WORLD_EVIL" ]  && echo "worldevil=${WORLD_EVIL}"
+} > "$SERVERCONFIG"
+echo "[entrypoint] Wrote serverconfig.txt (seed=${SEED}, difficulty=${DIFFICULTY})"
+
 # ─── First-run detection ────────────────────────────────────────────────
 WORLD_ARGS=""
 NAMED_WLD="$DATA_ROOT/worlds/${WORLD_NAME}.wld"
@@ -54,12 +69,7 @@ if [ -f "$NAMED_WLD" ]; then
 else
   echo "[entrypoint] No world named '${WORLD_NAME}' found — auto-creating (size=${WORLD_SIZE}, diff=${DIFFICULTY})"
   WORLD_ARGS="-autocreate ${WORLD_SIZE} -worldname ${WORLD_NAME} -world /worlds/${WORLD_NAME}.wld"
-  [ -n "$SEED" ] && WORLD_ARGS="$WORLD_ARGS -seed ${SEED}"
-  [ -n "$DIFFICULTY" ] && WORLD_ARGS="$WORLD_ARGS -difficulty ${DIFFICULTY}"
 fi
-
-PASS_ARG=""
-[ -n "$SERVER_PASS" ] && PASS_ARG="-pass $SERVER_PASS"
 
 echo "[entrypoint] HOME=$HOME — launching TShock..."
 exec ./TShock.Server \
@@ -69,9 +79,7 @@ exec ./TShock.Server \
   -worldselectpath /worlds \
   -additionalplugins /plugins \
   -savedirectory /worlds \
-  -maxplayers "${MAX_PLAYERS}" \
-  -secure "${SECURE}" \
+  -config "$SERVERCONFIG" \
   -noupnp \
-  $PASS_ARG \
   $WORLD_ARGS \
   "$@"
