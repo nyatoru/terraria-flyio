@@ -51,15 +51,17 @@ chown -R 1654:1654 "$DATA_ROOT" 2>/dev/null || true
 # does NOT support special text seeds like "for the worthy" (TShock bug #2328).
 SERVERCONFIG="$DATA_ROOT/tshock/serverconfig.txt"
 {
-  echo "maxplayers=${MAX_PLAYERS}"
-  echo "secure=${SECURE}"
+  echo "maxplayers=${MAX_PLAYERS:-8}"
+  echo "secure=${SECURE:-1}"
   [ -n "$SERVER_PASS" ] && echo "password=${SERVER_PASS}"
   [ -n "$SEED" ]        && echo "seed=${SEED}"
   [ -n "$DIFFICULTY" ]  && echo "difficulty=${DIFFICULTY}"
   [ -n "$WORLD_EVIL" ]  && echo "worldevil=${WORLD_EVIL}"
+  [ -n "$WORLD_NAME" ]  && echo "worldname=${WORLD_NAME}"
+  [ -n "$WORLD_SIZE" ]  && echo "autocreate=${WORLD_SIZE}"
 } > "$SERVERCONFIG"
-echo "[entrypoint] Wrote serverconfig.txt (seed=${SEED}, difficulty=${DIFFICULTY})"
-
+echo "[entrypoint] Wrote serverconfig.txt:"
+cat "$SERVERCONFIG"
 # ─── First-run detection ────────────────────────────────────────────────
 WORLD_ARGS=""
 NAMED_WLD="$DATA_ROOT/worlds/${WORLD_NAME}.wld"
