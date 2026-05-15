@@ -33,6 +33,7 @@ ENV WORLD_SIZE=3 \
 
 # Custom entrypoint: wire /data → /tshock /worlds /plugins, then exec server
 COPY entrypoint.sh /entrypoint.sh
+COPY config.json /server/config.json
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 7777 7878
