@@ -63,16 +63,9 @@ SERVERCONFIG="$DATA_ROOT/tshock/serverconfig.txt"
 echo "[entrypoint] Wrote serverconfig.txt:"
 cat "$SERVERCONFIG"
 
-# ─── Deploy default config.json (first-run only) ────────────────────────
-# Copy bundled config.json only if one doesn't exist yet on the volume.
-# This preserves any manual edits made after first deploy.
-TSHOCK_CONFIG="$DATA_ROOT/tshock/config.json"
-if [ ! -f "$TSHOCK_CONFIG" ]; then
-  cp /server/config.json "$TSHOCK_CONFIG"
-  echo "[entrypoint] Deployed default config.json"
-else
-  echo "[entrypoint] config.json already exists — skipping"
-fi
+# ─── Deploy config.json (always overwrite) ────────────────────────────
+cp /server/config.json "$DATA_ROOT/tshock/config.json"
+echo "[entrypoint] Deployed config.json"
 # ─── First-run detection ────────────────────────────────────────────────
 WORLD_ARGS=""
 NAMED_WLD="$DATA_ROOT/worlds/${WORLD_NAME}.wld"
