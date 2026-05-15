@@ -31,11 +31,17 @@ ENV WORLD_SIZE=3 \
     SECURE=1 \
     SEED="for the worthy"
 
+# Install Bun and build web admin panel
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
+COPY web/ /web/
+RUN cd /web && bun install && bun run build
+
 # Custom entrypoint: wire /data → /tshock /worlds /plugins, then exec server
 COPY entrypoint.sh /entrypoint.sh
 COPY config.json /server/config.json
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 7777 7878
+EXPOSE 7777 7878 17777
 
 ENTRYPOINT ["/entrypoint.sh"]
