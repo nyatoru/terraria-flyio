@@ -33,9 +33,8 @@ ENV WORLD_SIZE=3 \
 
 # Install Bun and build web admin panel
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
 COPY web/ /web/
-RUN cd /web && bun install && bun run build
+RUN /root/.bun/bin/bun install --cwd /web && /root/.bun/bin/bun --cwd /web run build
 
 # Custom entrypoint: wire /data → /tshock /worlds /plugins, then exec server
 COPY entrypoint.sh /entrypoint.sh

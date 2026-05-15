@@ -81,7 +81,7 @@ echo "[entrypoint] HOME=$HOME — launching TShock..."
 
 # Start web admin panel in background
 echo "[entrypoint] Starting web admin panel on port 17777..."
-cd /web && bun run preview &
+/root/.bun/bin/bun --cwd /web run preview &
 cd /server
 exec ./TShock.Server \
   -configpath /tshock \
