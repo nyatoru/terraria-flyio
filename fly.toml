@@ -44,10 +44,16 @@ primary_region = "sin"
     port     = 7777
     handlers = []
 
-  [[services.tcp_checks]]
-    interval      = "30s"
-    timeout       = "10s"
-    grace_period  = "180s"   # Large+Master world generation takes 2-4 min
+  # TCP health checks are DISABLED.
+  # Reason: each probe opens a TCP connection that TShock interprets as a
+  # "client connecting" event, triggering a world save + backup every 15-60s.
+  # The probes flood the world file with backups (.bak1/.bak2) and add disk I/O.
+  # Fly will still detect a dead machine via the process exit code — if
+  # TShock crashes, the container exits and Fly restarts it.
+  #
+  # If you want process-level health monitoring, configure a TShock REST API
+  # health endpoint and use [[services.http_checks]] on port 7878 instead
+  # (REST API doesn't trigger Terraria's save-on-connect behavior).
 
 # ─── Machine size: performance-2x = 2 dedicated vCPU + 4GB RAM
 # Ideal for medium/large worlds with 8-16 players + plugins
@@ -55,4 +61,9 @@ primary_region = "sin"
   size = "performance-2x"
 
 [deploy]
-  strategy = "immediate"   # No rolling — only one server can hold the world
+  # Stateful single-instance app — only one machine can hold the world lock.
+  # 'immediate' kills the old machine and starts a new one (1-3 min downtime
+  # during world reload). Cannot use rolling/bluegreen (volume + world file
+  # are exclusive to one machine).
+  strategy = "immediate"
+  wait_timeout = "5m"   # Allow time for world to load on the new machine
