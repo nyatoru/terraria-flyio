@@ -60,6 +60,9 @@ primary_region = "sin"
 [[vm]]
   size = "performance-2x"
 
+[env]
+  WORLD_NAME = "legendary"
+
 [deploy]
   # Stateful single-instance app — only one machine can hold the world lock.
   # 'immediate' kills the old machine and starts a new one (1-3 min downtime
