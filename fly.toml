@@ -62,6 +62,8 @@ primary_region = "sin"
 
 [env]
   WORLD_NAME = "legendary"
+  SEED = "for the worthy"
+  DIFFICULTY = "2"
 
 [deploy]
   # Stateful single-instance app — only one machine can hold the world lock.
