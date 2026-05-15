@@ -15,7 +15,7 @@ while true; do
   echo "[backup] Starting backup → $DEST"
 
   fly ssh console --app "$APP" -C \
-    "tar czf - -C / data --exclude='data/tshock/logs' --exclude='data/tshock/crashes'" \
+    "tar czf - --exclude='data/tshock/logs' --exclude='data/tshock/crashes' -C / data" \
     > "$DEST/data.tar.gz"
 
   if [ $? -eq 0 ]; then
