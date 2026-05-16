@@ -31,9 +31,15 @@ ENV WORLD_SIZE=3 \
     SECURE=1 \
     SEED="for the worthy"
 
-# Install Bun and build web admin panel
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
+# Install Bun as static binary (base image may lack bash/curl for installer)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends unzip \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip -o /tmp/bun.zip \
+ && unzip /tmp/bun.zip -d /usr/local/bin \
+ && rm /tmp/bun.zip \
+ && chmod +x /usr/local/bin/bun
+
 COPY web/ /web/
 RUN bun install --cwd /web && bun --cwd /web run build
 
