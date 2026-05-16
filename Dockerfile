@@ -19,7 +19,7 @@ USER root
 
 # Editing tools for live config tweaks via `fly ssh console`
 RUN apt-get update \
- && apt-get install -y --no-install-recommends nano vim jq \
+ && apt-get install -y --no-install-recommends nano vim jq curl unzip \
  && rm -rf /var/lib/apt/lists/*
 
 # World / server defaults (override with `fly secrets set ...`)
@@ -32,10 +32,7 @@ ENV WORLD_SIZE=3 \
     SEED="for the worthy"
 
 # Install Bun as static binary (base image may lack bash/curl for installer)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends unzip \
- && rm -rf /var/lib/apt/lists/* \
- && curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip -o /tmp/bun.zip \
+RUN curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip -o /tmp/bun.zip \
  && unzip /tmp/bun.zip -d /usr/local/bin \
  && rm /tmp/bun.zip \
  && chmod +x /usr/local/bin/bun
