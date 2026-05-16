@@ -79,9 +79,35 @@ fi
 
 echo "[entrypoint] HOME=$HOME — launching TShock..."
 
-# Start web admin panel in background
+# ─── Start web admin panel in background ──────────────────────────────
+BUN="/usr/local/bin/bun"
 echo "[entrypoint] Starting web admin panel on port 17777..."
-cd /web && bun run preview &
+
+if [ ! -x "$BUN" ]; then
+  echo "[entrypoint] WARNING: bun not found at $BUN — web panel disabled"
+else
+  cd /web
+  "$BUN" run preview > /tmp/web-panel.log 2>&1 &
+  WEB_PID=$!
+  echo "[entrypoint] Web panel started (PID: $WEB_PID), waiting for readiness..."
+  sleep 3
+
+  if kill -0 "$WEB_PID" 2>/dev/null; then
+    # Verify HTTP is actually responding
+    if curl -sf http://127.0.0.1:17777/ > /dev/null 2>&1; then
+      echo "[entrypoint] ✓ Web panel ready on port 17777"
+    else
+      echo "[entrypoint] ⚠ Web panel process alive but not responding on port 17777"
+      echo "[entrypoint] Web panel log:"
+      cat /tmp/web-panel.log 2>/dev/null | head -30
+    fi
+  else
+    echo "[entrypoint] ✗ Web panel CRASHED! Exit code: $?"
+    echo "[entrypoint] Web panel log:"
+    cat /tmp/web-panel.log 2>/dev/null | head -30
+  fi
+fi
+
 cd /server
 exec ./TShock.Server \
   -configpath /tshock \

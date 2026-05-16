@@ -41,6 +41,12 @@ RUN curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux
 COPY web/ /web/
 RUN bun install --cwd /web && bun --cwd /web run build
 
+# Verify bun works at runtime (catches glibc / arch issues early)
+RUN /usr/local/bin/bun --version
+
+# Copy static assets (favicon) into dist if not already there
+RUN cp -n /web/public/favicon.svg /web/dist/favicon.svg 2>/dev/null; true
+
 # Custom entrypoint: wire /data → /tshock /worlds /plugins, then exec server
 COPY entrypoint.sh /entrypoint.sh
 COPY config.json /server/config.json
