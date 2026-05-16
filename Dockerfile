@@ -33,8 +33,9 @@ ENV WORLD_SIZE=3 \
 
 # Install Bun as static binary (base image may lack bash/curl for installer)
 RUN curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip -o /tmp/bun.zip \
- && unzip /tmp/bun.zip -d /usr/local/bin \
- && rm /tmp/bun.zip \
+ && unzip /tmp/bun.zip -d /tmp \
+ && mv /tmp/bun-linux-x64/bun /usr/local/bin/bun \
+ && rm -rf /tmp/bun.zip /tmp/bun-linux-x64 \
  && chmod +x /usr/local/bin/bun
 
 COPY web/ /web/
